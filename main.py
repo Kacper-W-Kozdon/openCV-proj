@@ -61,7 +61,6 @@ class ControlsWindow:
     def update_canvas(self):
         self.canvas_region1.delete("all")
         self.canvas_region2.delete("all")
-
         my_file = pathlib.Path(f"{path}/region1.png")
 
         if my_file.is_file():
@@ -76,7 +75,8 @@ class ControlsWindow:
 
         self.canvas_region1.update()
         self.canvas_region2.update()
-        self.root.after(1000, self.update_canvas())
+        self.root.after(1000, self.update_canvas)
+        self.root.mainloop()
 
     def main_window(self):
         self.root = Tk()
@@ -89,23 +89,22 @@ class ControlsWindow:
         # Button for closing
         exit_button = Button(self.root, text="Exit", command=self.Close)
         exit_button.pack(in_=self.top, pady=10)
-        # exit_button.place(x=25, y=100)
 
         self.canvas_region1 = Canvas(self.root, bg="black", height=200, width=200)
         self.canvas_region1.pack(in_=self.top, side="left")
 
-        # my_file = pathlib.Path(f"{path}/region1.png")
-        # if my_file.is_file():
-        #     img_region1 = ImageTk.PhotoImage(Image.open(f"{path}/region1.png"))
-        #     self.canvas_region1.create_image(10,10,anchor=NW,image=img_region1)
+        my_file = pathlib.Path(f"{path}/region1.png")
+        if my_file.is_file():
+            img_region1 = ImageTk.PhotoImage(Image.open(f"{path}/region1.png"))
+            self.canvas_region1.create_image(10, 10, anchor=NW, image=img_region1)
 
         self.canvas_region2 = Canvas(self.root, bg="black", height=200, width=200)
         self.canvas_region2.pack(in_=self.top, side="left")
 
-        # my_file = pathlib.Path(f"{path}/region2.png")
-        # if my_file.is_file():
-        #     img_region2 = ImageTk.PhotoImage(Image.open(f"{path}/region2.png"))
-        #     self.canvas_region2.create_image(10,10,anchor=NW,image=img_region2)
+        my_file = pathlib.Path(f"{path}/region2.png")
+        if my_file.is_file():
+            img_region2 = ImageTk.PhotoImage(Image.open(f"{path}/region2.png"))
+            self.canvas_region2.create_image(10, 10, anchor=NW, image=img_region2)
 
         region1_button = Button(
             self.root,
@@ -121,15 +120,19 @@ class ControlsWindow:
         )
         region2_button.pack(in_=self.bottom, side="right")
 
-        self.root.after(100, self.update_canvas())
-        self.root.mainloop()
+        self.update_canvas()
 
 
 drawing = False  # true if mouse is pressed
 mode = True  # if True, draw rectangle. Press 'm' to toggle to curve
 ix, iy = -1, -1
 ex, ey = -1, -1
-goal_config = dict()
+goal_config_file = pathlib.Path(f"{path}/goal_config.json")
+if not goal_config_file.is_file():
+    goal_config = dict()
+else:
+    with open(f"{path}/goal_config.json") as goal_config_json:
+        goal_config = json.load(goal_config_json)
 
 
 # mouse callback function
