@@ -47,6 +47,74 @@ def region_wrapper(func):
     return outer
 
 
+# mouse callback function
+def draw_circle(event, x, y, flags, param):
+    global ix, iy, ex, ey, drawing, mode, img
+
+    if event == cv.EVENT_LBUTTONDOWN:
+        drawing = True
+        img = imgbase.copy()
+        ix, iy = x, y
+
+    elif event == cv.EVENT_MOUSEMOVE:
+        if drawing is True:
+            img = imgbase.copy()
+            if mode is True:
+                cv.rectangle(img, (ix, iy), (x, y), (0, 255, 0), 3)
+            else:
+                r = int(((x - ix) ** 2 + (y - iy) ** 2) ** (0.5))
+                cv.circle(img, (ix, iy), r, (0, 0, 255), 3)
+
+    elif event == cv.EVENT_LBUTTONUP:
+        drawing = False
+        r = ((x - ix) ** 2 + (y - iy) ** 2) ** (0.5)
+        if mode is True:
+            cv.rectangle(img, (ix, iy), (x, y), (0, 0, 255), 3)
+            ex, ey = x, y
+        else:
+            cv.circle(img, (ix, iy), r, (0, 0, 255), 3)
+
+
+def mainopencv(region_name: str = "region1"):
+    global mode, goal_config
+
+    cv.namedWindow("image")
+    cv.setMouseCallback("image", draw_circle)
+
+    while 1:
+        if (img - imgbase).any():
+            img_ = img
+        else:
+            img_ = imgbase.copy()
+        img_ = cv.putText(
+            img_,
+            region_name,
+            (10, 50),
+            cv.FONT_HERSHEY_SIMPLEX,
+            2,
+            (0, 0, 255),
+            2,
+            cv.LINE_AA,
+            False,
+        )
+        cv.imshow("image", img_)
+        k = cv.waitKey(1) & 0xFF
+        if k == ord("m"):
+            mode = not mode
+        elif k == ord("s"):
+            region = img[iy:ey, ix:ex]
+            cv.imwrite(f"{path}/{region_name}.png", region)
+
+            goal_config[region_name] = {"frame_crop": ((ix, iy), (ex, ey))}
+
+            with open("goal_config.json", "w", encoding="utf-8") as f:
+                json.dump(goal_config, f, ensure_ascii=False, indent=4)
+
+        elif k == 27:
+            break
+    cv.destroyAllWindows()
+
+
 class ControlsWindow:
     def __init__(self):
         self.main_window()
@@ -55,8 +123,8 @@ class ControlsWindow:
         self.root.destroy()
 
     @region_wrapper
-    def select_region(self, region_name: str = "region1"):
-        return mainopencv(region_name=region_name)
+    def select_region(self, region_name: str = "region1", fun_=mainopencv):
+        return fun_(region_name=region_name)
 
     def update_canvas(self):
         self.canvas_region1.delete("all")
@@ -133,75 +201,6 @@ if not goal_config_file.is_file():
 else:
     with open(f"{path}/goal_config.json") as goal_config_json:
         goal_config = json.load(goal_config_json)
-
-
-# mouse callback function
-def draw_circle(event, x, y, flags, param):
-    global ix, iy, ex, ey, drawing, mode, img
-
-    if event == cv.EVENT_LBUTTONDOWN:
-        drawing = True
-        img = imgbase.copy()
-        ix, iy = x, y
-
-    elif event == cv.EVENT_MOUSEMOVE:
-        if drawing is True:
-            img = imgbase.copy()
-            if mode is True:
-                cv.rectangle(img, (ix, iy), (x, y), (0, 255, 0), 3)
-            else:
-                r = int(((x - ix) ** 2 + (y - iy) ** 2) ** (0.5))
-                cv.circle(img, (ix, iy), r, (0, 0, 255), 3)
-
-    elif event == cv.EVENT_LBUTTONUP:
-        drawing = False
-        r = ((x - ix) ** 2 + (y - iy) ** 2) ** (0.5)
-        if mode is True:
-            cv.rectangle(img, (ix, iy), (x, y), (0, 255, 0), 3)
-            ex, ey = x, y
-        else:
-            cv.circle(img, (ix, iy), r, (0, 0, 255), 3)
-
-
-def mainopencv(region_name: str = "region1"):
-    global mode, goal_config
-
-    cv.namedWindow("image")
-    cv.setMouseCallback("image", draw_circle)
-
-    while 1:
-        if (img - imgbase).any():
-            img_ = img
-        else:
-            img_ = imgbase.copy()
-        img_ = cv.putText(
-            img_,
-            region_name,
-            (10, 50),
-            cv.FONT_HERSHEY_SIMPLEX,
-            2,
-            (0, 0, 255),
-            2,
-            cv.LINE_AA,
-            False,
-        )
-        cv.imshow("image", img_)
-        k = cv.waitKey(1) & 0xFF
-        if k == ord("m"):
-            mode = not mode
-        elif k == ord("s"):
-            region = img[iy:ey, ix:ex]
-            cv.imwrite(f"{path}/{region_name}.png", region)
-
-            goal_config[region_name] = {"frame_crop": ((ix, iy), (ex, ey))}
-
-            with open("goal_config.json", "w", encoding="utf-8") as f:
-                json.dump(goal_config, f, ensure_ascii=False, indent=4)
-
-        elif k == 27:
-            break
-    cv.destroyAllWindows()
-
 
 if __name__ == "__main__":
     ControlsWindow()
