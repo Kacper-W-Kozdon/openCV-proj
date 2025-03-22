@@ -3,9 +3,11 @@ from tkinter import NW, Button, Canvas, Frame, Tk
 
 from PIL import Image, ImageTk
 
+from ..opencvwindow import mainopencv
 from ..utils import region_wrapper
 
 path = pathlib.Path().resolve()
+select_region_fun = mainopencv
 
 
 class ControlsWindow:
@@ -16,7 +18,7 @@ class ControlsWindow:
         self.root.destroy()
 
     @region_wrapper
-    def select_region(self, region_name: str = "region1", fun_=None):
+    def select_region(self, region_name: str = "region1", fun_=select_region_fun):
         if fun_:
             return fun_(region_name=region_name)
 
