@@ -3,6 +3,7 @@ import pathlib
 from tkinter import NW, Button, Canvas, Frame, Tk
 
 import cv2 as cv
+import numpy as np
 from PIL import Image, ImageTk
 
 from ..opencvwindow import mainopencv
@@ -43,7 +44,7 @@ class ControlsWindow:
             resized_image1 = cv.resize(
                 img1, dsize, dst=None, fx=None, fy=None, interpolation=cv.INTER_LINEAR
             )
-            # resized_image1 = np.transpose(resized_image1, (2, 1, 0))
+            resized_image1 = np.flip(resized_image1, 2)
 
             img_region1_array = Image.fromarray(resized_image1, mode="RGB")
             img_region1 = img_region1_array.convert("RGB")
@@ -64,6 +65,7 @@ class ControlsWindow:
             resized_image2 = cv.resize(
                 img2, dsize, dst=None, fx=None, fy=None, interpolation=cv.INTER_LINEAR
             )
+            resized_image2 = np.flip(resized_image2, 2)
 
             img_region2_array = Image.fromarray(resized_image2, mode="RGB")
             img_region2 = img_region2_array.convert("RGB")
