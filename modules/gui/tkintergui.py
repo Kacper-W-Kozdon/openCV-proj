@@ -1,13 +1,18 @@
+import os
 import pathlib
 from tkinter import NW, Button, Canvas, Frame, Tk
 
+import cv2 as cv
 from PIL import Image, ImageTk
 
 from ..opencvwindow import mainopencv
 from ..utils import region_wrapper
 
-path = pathlib.Path().resolve()
+file_path = os.path.dirname(os.path.realpath(__file__))
+path = pathlib.Path(file_path).parent.parent.resolve()
 select_region_fun = mainopencv
+
+canvas = {"height": 200, "width": 200}
 
 
 class ControlsWindow:
@@ -28,13 +33,42 @@ class ControlsWindow:
         my_file = pathlib.Path(f"{path}/region1.png")
 
         if my_file.is_file():
-            img_region1 = ImageTk.PhotoImage(Image.open(f"{path}/region1.png"))
+            img1 = cv.imread(f"{path}/region1.png")
+            height, width, channels = img1.shape
+            if (ratio := height / width) >= 1:
+                dsize = (canvas.get("height"), int(width / ratio))
+            else:
+                dsize = (int(height / ratio), canvas.get("width"))
+
+            resized_image1 = cv.resize(
+                img1, dsize, dst=None, fx=None, fy=None, interpolation=cv.INTER_LINEAR
+            )
+            # resized_image1 = np.transpose(resized_image1, (2, 1, 0))
+
+            img_region1_array = Image.fromarray(resized_image1, mode="RGB")
+            img_region1 = img_region1_array.convert("RGB")
+            img_region1 = ImageTk.PhotoImage(img_region1)
+
             self.canvas_region1.create_image(10, 10, anchor=NW, image=img_region1)
 
         my_file = pathlib.Path(f"{path}/region2.png")
         print(my_file.is_file())
         if my_file.is_file():
-            img_region2 = ImageTk.PhotoImage(Image.open(f"{path}/region2.png"))
+            img2 = cv.imread(f"{path}/region2.png")
+            height, width, channels = img2.shape
+            if (ratio := height / width) >= 1:
+                dsize = (canvas.get("height"), int(width / ratio))
+            else:
+                dsize = (int(height / ratio), canvas.get("width"))
+
+            resized_image2 = cv.resize(
+                img2, dsize, dst=None, fx=None, fy=None, interpolation=cv.INTER_LINEAR
+            )
+
+            img_region2_array = Image.fromarray(resized_image2, mode="RGB")
+            img_region2 = img_region2_array.convert("RGB")
+            img_region2 = ImageTk.PhotoImage(img_region2)
+
             self.canvas_region2.create_image(10, 10, anchor=NW, image=img_region2)
 
         self.canvas_region1.update()
@@ -54,7 +88,12 @@ class ControlsWindow:
         exit_button = Button(self.root, text="Exit", command=self.Close)
         exit_button.pack(in_=self.top, pady=10)
 
-        self.canvas_region1 = Canvas(self.root, bg="black", height=200, width=200)
+        self.canvas_region1 = Canvas(
+            self.root,
+            bg="black",
+            height=canvas.get("height"),
+            width=canvas.get("width"),
+        )
         self.canvas_region1.pack(in_=self.top, side="left")
 
         my_file = pathlib.Path(f"{path}/region1.png")
@@ -62,7 +101,12 @@ class ControlsWindow:
             img_region1 = ImageTk.PhotoImage(Image.open(f"{path}/region1.png"))
             self.canvas_region1.create_image(10, 10, anchor=NW, image=img_region1)
 
-        self.canvas_region2 = Canvas(self.root, bg="black", height=200, width=200)
+        self.canvas_region2 = Canvas(
+            self.root,
+            bg="black",
+            height=canvas.get("height"),
+            width=canvas.get("width"),
+        )
         self.canvas_region2.pack(in_=self.top, side="left")
 
         my_file = pathlib.Path(f"{path}/region2.png")
