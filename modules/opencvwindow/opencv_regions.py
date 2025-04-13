@@ -17,38 +17,47 @@ if img is None:
 
 
 # mouse callback function
-def draw_circle(event, x, y, flags, param):
-    global ix, iy, ex, ey, drawing, mode, img
+def draw_frame(event, x, y, flags, param):
+    global ix, iy, ex, ey, drawing, mode, img, click_counter
+
+    def connect_points(prev_point=None, current_point=None, click=None, image=None):
+        if click == 0:
+            image = imgbase.copy()
+            return image
+
+        cv.line(img, prev_point, current_point, (0, 0, 255), box_line_width)
+        return img
 
     if event == cv.EVENT_LBUTTONDOWN:
         drawing = True
         img = imgbase.copy()
         ix, iy = x, y
+        if mode is False:
+            points[click_counter] = (ix, iy)
+            img = connect_points(
+                points[click_counter], points[click_counter - 1], click_counter, img
+            )
+            click_counter += 1
+            click_counter = click_counter % 4
 
     elif event == cv.EVENT_MOUSEMOVE:
         if drawing is True:
             img = imgbase.copy()
             if mode is True:
                 cv.rectangle(img, (ix, iy), (x, y), (0, 255, 0), box_line_width)
-            else:
-                r = int(((x - ix) ** 2 + (y - iy) ** 2) ** (0.5))
-                cv.circle(img, (ix, iy), r, (0, 0, 255), box_line_width)
 
     elif event == cv.EVENT_LBUTTONUP:
         drawing = False
-        r = ((x - ix) ** 2 + (y - iy) ** 2) ** (0.5)
         if mode is True:
             cv.rectangle(img, (ix, iy), (x, y), (0, 0, 255), 3)
             ex, ey = x, y
-        else:
-            cv.circle(img, (ix, iy), r, (0, 0, 255), 3)
 
 
-def mainopencv(region_name: str = "region1"):
+def mainopencv(region_name: str = "region1", select_frame_or_points: str = "frame"):
     global mode, goal_config
 
     cv.namedWindow("image")
-    cv.setMouseCallback("image", draw_circle)
+    cv.setMouseCallback("image", draw_frame)
 
     while 1:
         if (img - imgbase).any():
@@ -68,9 +77,14 @@ def mainopencv(region_name: str = "region1"):
         )
         cv.imshow("image", img_)
         k = cv.waitKey(1) & 0xFF
-        if k == ord("m"):
-            mode = not mode
-        elif k == ord("s"):
+
+        assert (
+            select_frame_or_points in ["frame", "point"]
+        ), f"select_frame_or_points variable incorrect, it should be 'frame' or 'points', it was {select_frame_or_points}"
+
+        mode = True if select_frame_or_points == "frame" else False
+
+        if k == ord("s"):
             region = img[
                 (iy + box_line_width) : (ey - box_line_width),
                 (ix + box_line_width) : (ex - box_line_width),
@@ -87,6 +101,8 @@ def mainopencv(region_name: str = "region1"):
     cv.destroyAllWindows()
 
 
+click_counter = 0
+points = [None, None, None, None]
 drawing = False  # true if mouse is pressed
 mode = True  # if True, draw rectangle. Press 'm' to toggle to curve
 ix, iy = -1, -1

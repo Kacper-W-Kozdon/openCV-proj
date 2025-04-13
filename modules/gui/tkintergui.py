@@ -13,7 +13,7 @@ file_path = os.path.dirname(os.path.realpath(__file__))
 path = pathlib.Path(file_path).parent.parent.resolve()
 select_region_fun = mainopencv
 
-canvas = {"height": 200, "width": 200}
+canvas = {"height": 200, "width": 200, "anchor_y": 0, "anchor_x": 0}
 
 
 class ControlsWindow:
@@ -24,9 +24,16 @@ class ControlsWindow:
         self.root.destroy()
 
     @region_wrapper
-    def select_region(self, region_name: str = "region1", fun_=select_region_fun):
+    def select_region(
+        self,
+        region_name: str = "region1",
+        select_frame_or_points: str = "frame",
+        fun_=select_region_fun,
+    ):
         if fun_:
-            return fun_(region_name=region_name)
+            return fun_(
+                region_name=region_name, select_frame_or_points=select_frame_or_points
+            )
 
     def update_canvas(self):
         self.canvas_region1.delete("all")
@@ -50,7 +57,12 @@ class ControlsWindow:
             img_region1 = img_region1_array.convert("RGB")
             img_region1 = ImageTk.PhotoImage(img_region1)
 
-            self.canvas_region1.create_image(10, 10, anchor=NW, image=img_region1)
+            self.canvas_region1.create_image(
+                canvas.get("anchor_y"),
+                canvas.get("anchor_x"),
+                anchor=NW,
+                image=img_region1,
+            )
 
         my_file = pathlib.Path(f"{path}/region2.png")
         print(my_file.is_file())
@@ -71,7 +83,12 @@ class ControlsWindow:
             img_region2 = img_region2_array.convert("RGB")
             img_region2 = ImageTk.PhotoImage(img_region2)
 
-            self.canvas_region2.create_image(10, 10, anchor=NW, image=img_region2)
+            self.canvas_region2.create_image(
+                canvas.get("anchor_y"),
+                canvas.get("anchor_x"),
+                anchor=NW,
+                image=img_region2,
+            )
 
         self.canvas_region1.update()
         self.canvas_region2.update()
@@ -123,11 +140,29 @@ class ControlsWindow:
         )
         region1_button.pack(in_=self.bottom, side="left")
 
+        region1_points_button = Button(
+            self.root,
+            text="Select region 1",
+            command=self.select_region(
+                region_name="region1", select_frame_or_points="points"
+            ),
+        )
+        region1_points_button.pack(in_=self.bottom, side="left")
+
         region2_button = Button(
             self.root,
             text="Select region 2",
             command=self.select_region(region_name="region2"),
         )
         region2_button.pack(in_=self.bottom, side="right")
+
+        region2_points_button = Button(
+            self.root,
+            text="Select region 2",
+            command=self.select_region(
+                region_name="region2", select_frame_or_points="points"
+            ),
+        )
+        region2_points_button.pack(in_=self.bottom, side="right")
 
         self.update_canvas()
