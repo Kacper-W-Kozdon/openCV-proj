@@ -16,7 +16,7 @@ print(path_root)
 
 # mouse callback function
 def draw_frame(event, x, y, flags, param):
-    global ix, iy, ex, ey, drawing, mode, img, click_counter
+    global ix, iy, ex, ey, drawing, mode, img, click_counter, goal_in
 
     def connect_points(prev_point=None, current_point=None, click=None, image=None):
         if click == 0:
@@ -28,12 +28,12 @@ def draw_frame(event, x, y, flags, param):
 
     if event == cv.EVENT_LBUTTONDOWN:
         drawing = True
-        img = imgbase.copy()
+        img = img if mode is False else imgbase.copy()
         ix, iy = x, y
         if mode is False:
             points[click_counter] = (ix, iy)
             img = connect_points(
-                points[click_counter], points[click_counter - 1], click_counter, img
+                points[click_counter - 1], points[click_counter], click_counter, img
             )
             click_counter += 1
             click_counter = click_counter % 4
@@ -49,10 +49,15 @@ def draw_frame(event, x, y, flags, param):
         if mode is True:
             cv.rectangle(img, (ix, iy), (x, y), (0, 0, 255), 3)
             ex, ey = x, y
+        if mode is False and click_counter == 0:
+            img = connect_points(
+                points[click_counter - 1], points[click_counter], click_counter - 1, img
+            )
+            goal_in = points
 
 
 def mainopencv(region_name: str = "region1", select_frame_or_points: str = "frame"):
-    global mode, goal_config, region_file, imgbase
+    global mode, goal_config, region_file, imgbase, goal_in
 
     region_file = f"{region_name}.png"
 
@@ -108,7 +113,7 @@ def mainopencv(region_name: str = "region1", select_frame_or_points: str = "fram
         cv.imshow("image", img_)
         k = cv.waitKey(1) & 0xFF
 
-        if k == ord("s"):
+        if k == ord("s") and mode is True:
             region = img[
                 (iy + box_line_width) : (ey - box_line_width),
                 (ix + box_line_width) : (ex - box_line_width),
@@ -116,6 +121,12 @@ def mainopencv(region_name: str = "region1", select_frame_or_points: str = "fram
             cv.imwrite(f"{path_root}/{region_name}.png", region)
 
             goal_config[region_name] = {"frame_crop": ((ix, iy), (ex, ey))}
+
+            with open("goal_config.json", "w", encoding="utf-8") as f:
+                json.dump(goal_config, f, ensure_ascii=False, indent=4)
+
+        if k == ord("s") and mode is False:
+            goal_config[region_name]["goal_in"] = goal_in
 
             with open("goal_config.json", "w", encoding="utf-8") as f:
                 json.dump(goal_config, f, ensure_ascii=False, indent=4)
@@ -151,7 +162,7 @@ img = imgbase.copy()
 if img is None:
     sys.exit("Could not read the image.")
 
-
+goal_in = [None, None, None, None]
 goal_config_file = pathlib.Path(f"{path}/goal_config.json")
 if not goal_config_file.is_file():
     goal_config = dict()
